@@ -58,8 +58,8 @@ class HangmanGame:
         if len(letter) != 1 or not letter.isalpha():
             return "Enter one letter."
 
-        # Task 1: repeated correct or incorrect guesses
-        # must not affect the round again.
+        # Task 1:
+        # A letter can affect the round only once.
         if letter in self.guessed or letter in self.wrong:
             return "Already guessed."
 
@@ -77,7 +77,6 @@ class HangmanGame:
 
         self.hint_used = True
 
-        # Task 3: hint has a scoring penalty.
         hint_cost = DIFFICULTIES[self.difficulty]["hint_cost"]
         self.score = max(0, self.score - hint_cost)
 
@@ -108,31 +107,45 @@ class HangmanGame:
                 "Letter, /hint, or /quit: "
             ).strip().lower()
 
+            # Quit command
             if raw == "/quit":
+                print("Quitting the current session.")
                 return False
 
+            # Hint command
             if raw == "/hint":
                 hint = self.use_hint()
+
+                if hint:
+                    print("Hint:", hint)
+                else:
+                    print("Hint already used.")
+
+                continue
+
+            # Task 4:
+            # Handle unknown commands instead of treating
+            # them as invalid letters.
+            if raw.startswith("/"):
                 print(
-                    hint
-                    if hint
-                    else "Hint already used."
+                    "Unknown command. "
+                    "Use /hint or /quit."
                 )
                 continue
 
+            # Normal letter guess
             print(self.guess(raw))
 
         if self.won():
             self.streak += 1
 
-            # Task 3: difficulty changes the base score.
             base_points = DIFFICULTIES[
                 self.difficulty
             ]["points"]
 
             self.score += base_points + self.streak
 
-            # Task 2: record the completed round.
+            # Task 2
             self.stats.record(
                 True,
                 self.streak
@@ -141,10 +154,10 @@ class HangmanGame:
             print("Solved:", self.secret)
             return True
 
-        # Lost round.
+        # Lost round
         self.streak = 0
 
-        # Task 2: record the lost round.
+        # Task 2
         self.stats.record(
             False,
             self.streak
@@ -162,7 +175,10 @@ class HangmanGame:
         print("A session consists of multiple rounds.")
 
         while True:
-            # Task 3: choose difficulty.
+
+            # -------------------------
+            # Difficulty selection
+            # -------------------------
             print(
                 "\nDifficulties:",
                 ", ".join(DIFFICULTIES)
@@ -173,15 +189,21 @@ class HangmanGame:
             ).strip().lower()
 
             if difficulty == "q":
+                print("Goodbye!")
                 return
 
             if difficulty not in DIFFICULTIES:
-                print("Unknown difficulty.")
+                print(
+                    "Unknown difficulty. "
+                    "Choose easy, medium, or hard."
+                )
                 continue
 
             self.difficulty = difficulty
 
-            # Existing category selection.
+            # -------------------------
+            # Category selection
+            # -------------------------
             print(
                 "\nCategories:",
                 ", ".join(WORDS)
@@ -192,36 +214,58 @@ class HangmanGame:
             ).strip().lower()
 
             if raw == "q":
+                print("Goodbye!")
                 return
 
             if raw not in WORDS:
-                print("Unknown category.")
+                print(
+                    "Unknown category. "
+                    "Choose technology, science, or culture."
+                )
                 continue
 
             self.category = raw
 
+            # -------------------------
+            # Play round
+            # -------------------------
             if not self.play_round():
                 return
 
-            again = input(
-                "Another round? [y/n]: "
-            ).strip().lower()
+            # -------------------------
+            # Another round
+            # -------------------------
+            while True:
+                again = input(
+                    "Another round? [y/n]: "
+                ).strip().lower()
 
-            if again != "y":
+                if again == "y":
+                    break
+
+                if again == "n":
+                    print(
+                        "\nFinal score:",
+                        self.score
+                    )
+                    print(
+                        "Rounds played:",
+                        self.stats.rounds
+                    )
+                    print(
+                        "Rounds won:",
+                        self.stats.wins
+                    )
+                    print(
+                        "Best streak:",
+                        self.stats.best_streak
+                    )
+                    return
+
+                # Task 4:
+                # Invalid y/n input should not
+                # accidentally end the game.
                 print(
-                    "Final score:",
-                    self.score
+                    "Please enter y for yes "
+                    "or n for no."
                 )
-                print(
-                    "Rounds played:",
-                    self.stats.rounds
-                )
-                print(
-                    "Rounds won:",
-                    self.stats.wins
-                )
-                print(
-                    "Best streak:",
-                    self.stats.best_streak
-                )
-                return
